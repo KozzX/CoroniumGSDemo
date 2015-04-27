@@ -11,8 +11,21 @@ local widget = require( 'widget' )
 --== Game Code Goes Here
 local fillBarra1
 local fillBarra2
-local barra1
-local barra2
+local player
+local enemy
+local b1
+local b2
+local btn
+
+local options = {
+	label = "",
+	width = 300,
+	height = 60,
+	fontSize = 50,
+	onRelease = onButtonTap
+}
+display.setDefault( "background", 255/255,255/255,255/255)
+
 --======================================================================--
 --== Game Events
 --======================================================================--
@@ -31,38 +44,24 @@ end
 function onGameStart( event )
 	p( "game started" )
 
-	barra1 = display.newRect( display.contentCenterX/2, display.contentCenterY + display.contentCenterY/2, 100, 500 )
-	barra1:setFillColor( 0.5,0.5,0.5 )
-	barra1.anchorX = 0.5
-	barra1.anchorY = 1
-	fillBarra1 = display.newRect( barra1.x, barra1.y, 100, 0 )
-	fillBarra1:setFillColor( 0,0,1 )
-	fillBarra1.anchorX = 0.5
-	fillBarra1.anchorY = 1
+	player = display.newRect( 0, 0, 0, display.contentHeight )
+	player:setFillColor( 44/255,176/255,172/255 )
+	player.anchorX = 0
+	player.anchorY = 0
 	 
 	 
-	barra2 = display.newRect( display.contentCenterX + display.contentCenterX / 2, display.contentCenterY + display.contentCenterY/2, 100, 500 )
-	barra2:setFillColor( 0.5,0.5,0.5 )
-	barra2.anchorX = 0.5
-	barra2.anchorY = 1
-	fillBarra2 = display.newRect( barra2.x, barra2.y, 100, 0 )
-	fillBarra2:setFillColor( 1,0,0 )
-	fillBarra2.anchorX = 0.5
-	fillBarra2.anchorY = 1
+	enemy = display.newRect( display.contentWidth, 0, 0, display.contentHeight )
+	enemy:setFillColor( 227/255,79/225,145/255 )
+	enemy.anchorX = 1
+	enemy.anchorY = 0
 
 
 	function sendHit( event )
-		if event.y < display.contentCenterY then
-			gs:send({up = 10})
-		elseif event.y > display.contentCenterY then
-			gs:send({down = 10})
+		if event.phase == "ended" then
+			gs:send({hit = 10})
 		end
 	end
-	Runtime:addEventListener( "tap", sendHit )
-
-	tempo = timer.performWithDelay( 1000, function( )
-		gs:send({move = 1})
-	end , -1 )
+	Runtime:addEventListener( "touch", sendHit )
 
 end
 
@@ -87,14 +86,34 @@ local function onClientData( event )
 	local data = event.data
 
 	if data.setbar then
-		transition.to( fillBarra1, {height=barra1.height / 100 * data.setbar.bar1, time = 100} )
-		transition.to( fillBarra2, {height=barra2.height / 100 * data.setbar.bar2, time = 100} )
-		if(data.setbar.bar1 >= 100) then
-			gs:send({win = "1"})
-		elseif (data.setbar.bar1 >= 100) then
-			gs:send({win = "2"})
+		transition.to( player, {width = display.contentWidth / 100 * data.setbar.bar1, time = 100} )
+		transition.to( enemy,  {width = display.contentWidth / 100 * data.setbar.bar2, time = 100} )
+	end
+	if data.setbar.win then
+		if data.setbar.win > 0 then
+			function restart( event )
+				gs:send( { ready = 1 } )
+				btn:removeEventListener( "tap", restart )
+				display.remove( btn )
+			end
+			options.id = 'restart'
+			if gs:getPlayerNum() == data.setbar.win then
+				options.label = "You Win!"
+			else
+				options.label = "You Lose!"
+			end
+			options.x = display.contentCenterX
+			options.y = display.contentCenterY
+			btn = widget.newButton( options )
+			Runtime:removeEventListener( "touch", sendHit )
+			btn:addEventListener( "tap", restart )
 		end
 	end
+	if data.setbar.restart then
+		p("reiniciar")
+		Runtime:addEventListener( "touch", sendHit )	
+	end
+
 
 end
 
@@ -103,39 +122,33 @@ local function onClientConnect( event )
 
 	local function onButtonTap( event )
 		local btn_id = event.target.id
-		if btn_id == 'create' then
-			gs:createGame( 2 )
-		elseif btn_id == 'join' then
-			gs:joinGame( 2 )
+		if btn_id == 'play' then
+			gs:send({play = 1})
 		end
-
+		b1:removeEventListener( "tap", onButtonTap )
+		--b2:removeEventListener( "tap", onButtonTap )
 		display.remove( connct_grp )
+		
 	end
 
 	connct_grp = display.newGroup()
+	options.id = 'play'
+	options.label = "Play"
+	options.x = display.contentCenterX
+	options.y = display.contentCenterY 
+	b1 = widget.newButton( options )
 
-	local b1 = widget.newButton( {
-		label = "Create",
-		id = 'create',
-		x = display.contentCenterX,
-		y = display.contentCenterY - 40,
-		width = 60,
-		height = 40,
-		onRelease = onButtonTap
-	} )
+	--[[options.id = 'join'
+	options.label = "Join"
+	options.x = display.contentCenterX
+	options.y = display.contentCenterY + 40
+	b2 = widget.newButton( options )]]--
 
-	local b2 = widget.newButton( {
-		label = "Join",
-		id = 'join',
-		x = display.contentCenterX,
-		y = display.contentCenterY + 40,
-		width = 60,
-		height = 40,
-		onRelease = onButtonTap
-	} )
+	b1:addEventListener( "tap", onButtonTap )
+	--b2:addEventListener( "tap", onButtonTap )
 
 	connct_grp:insert( b1 )
-	connct_grp:insert( b2 )
+	--connct_grp:insert( b2 )
 
 end
 

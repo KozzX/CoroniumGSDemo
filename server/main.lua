@@ -7,49 +7,68 @@ local gs = require( 'CoroniumGS' ):new( 7173, 'abc' )
 --======================================================================--
 
 --== Game Code Goes Here
-local function calculateDown(client,down)
+local function autoNegotiate( client )
+	local game_count = gs:getGameCount( { game_state = 'open' } )
+
+	if game_count == 0 then
+		gs:createGame( client, 2 )
+	else
+		gs:addToGameQueue( client, 2 )
+	end
+end
+
+local function calculateHit(client,hit)
 	local game = gs:getPlayerGame (client)
+	local win = 0
 
 	local player_num = client:getPlayerNum()
 	p(player_num)
 
+	player1 = game:getPlayerByNumber(1)
+	player2 = game:getPlayerByNumber(2)
+
 	if player_num == 1 then
-		game.bar2 = game.bar2 + down
-		game.bar1 = game.bar1 - down
+		game.bar2 = game.bar2 - hit
+		game.bar1 = game.bar1 + hit
+
 	else
-		game.bar1 = game.bar1 + down
-		game.bar2 = game.bar2 - down
+		game.bar1 = game.bar1 - hit
+		game.bar2 = game.bar2 + hit
 	end
 
-	game:broadcast( {setbar = { bar1 = game.bar1, bar2= game.bar2 } } )
+	if game.bar1 == 100 then
+		--game:publishGameDone("bye")
+		--game:close( )
+		win = 1
+	elseif game.bar2 == 100 then
+		--game:publishGameDone("bye")
+		--game:close( )
+		win = 2
+	end
+	p("Winner:",win)
+	player1:send( { setbar = { bar1 = game.bar1, bar2= game.bar2, win=win } } )
+	player2:send( { setbar = { bar1 = game.bar2, bar2= game.bar1, win=win } } )
 
 end
 
-local function calculateUp(client,up)
+local function restart( client )
 	local game = gs:getPlayerGame (client)
-
 	local player_num = client:getPlayerNum()
-	p(player_num)
-
+	game.bar1 = 50
+	game.bar2 = 50
 	if player_num == 1 then
-		game.bar1 = game.bar1 + up
-	else
-		game.bar2 = game.bar2 + up
+		game.ready1 = 1
+	elseif player_num == 2 then
+		game.ready2 = 1
 	end
-
-	game:broadcast( {setbar = { bar1 = game.bar1, bar2= game.bar2 } } )
-
+	p("Restart:",game.ready1,game.ready2)
+	if game.ready1 == 1 and game.ready2 == 1 then
+		game:broadcast({ setbar = { bar1 = game.bar1, bar2 = game.bar2, restart = 1 } })
+		game.ready1 = 0
+		game.ready2 = 0
+	end
 end
 
-local function moveUp(client,up)
-	local game = gs:getPlayerGame (client)
-
-	game.bar1 = game.bar1 + up
-	game.bar2 = game.bar2 + up
-
-	game:broadcast( {setbar = { bar1 = game.bar1, bar2= game.bar2 } } )
-
-end
 
 --======================================================================--
 --== Game Events
@@ -58,8 +77,10 @@ local function onGameCreate( game )
 	p( "--== Game Created ==--" )
 	p( game:getId() )
 
-	game.bar1 = 0
-	game.bar2 = 0
+	game.bar1 = 50
+	game.bar2 = 50
+	game.ready1 = 0
+	game.ready2 = 0
 
 end
 
@@ -91,14 +112,12 @@ end
 local function onClientData( client, data )
 
 	p( data )
-	if data.up then
-		calculateUp( client, data.up)
-	elseif data.down then
-		calculateDown( client, data.down)
-	elseif data.move then
-		moveUp( client, data.move)
-	elseif data.win then
-		
+	if data.play then
+		autoNegotiate( client )
+	elseif data.hit then
+		calculateHit( client, data.hit )
+	elseif data.ready then
+		restart( client )
 	end
 end
 
