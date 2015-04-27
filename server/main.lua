@@ -5,6 +5,9 @@ local gs = require( 'CoroniumGS' ):new( 7173, 'abc' )
 --======================================================================--
 --== Game Code
 --======================================================================--
+--local ClientData = require( 'ClientData' ).new()
+local DataProcessor = require( "DataProcessor" )
+local dp = DataProcessor:new()
 
 --== Game Code Goes Here
 local function autoNegotiate( client )
@@ -111,7 +114,9 @@ end
 --======================================================================--
 local function onClientData( client, data )
 
-	p( data )
+	dp:process( client,data,gs )
+
+	
 	if data.play then
 		autoNegotiate( client )
 	elseif data.hit then
