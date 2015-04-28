@@ -2,6 +2,8 @@
 --== Coronium GS
 --======================================================================--
 local gs = require( 'CoroniumGS' ):new( 7173, 'abc' )
+
+_G.gs = gs
 --======================================================================--
 --== Game Code
 --======================================================================--
@@ -10,15 +12,6 @@ local DataProcessor = require( "DataProcessor" )
 local dp = DataProcessor:new()
 
 --== Game Code Goes Here
-local function autoNegotiate( client )
-	local game_count = gs:getGameCount( { game_state = 'open' } )
-
-	if game_count == 0 then
-		gs:createGame( client, 2 )
-	else
-		gs:addToGameQueue( client, 2 )
-	end
-end
 
 local function calculateHit(client,hit)
 	local game = gs:getPlayerGame (client)
@@ -114,12 +107,9 @@ end
 --======================================================================--
 local function onClientData( client, data )
 
-	dp:process( client,data,gs )
+	dp:process( client,data )
 
-	
-	if data.play then
-		autoNegotiate( client )
-	elseif data.hit then
+	if data.hit then
 		calculateHit( client, data.hit )
 	elseif data.ready then
 		restart( client )

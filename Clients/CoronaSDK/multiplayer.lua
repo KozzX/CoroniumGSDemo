@@ -13,9 +13,13 @@ local fillBarra1
 local fillBarra2
 local player
 local enemy
+local fillPlayer
+local fillEnemy
 local b1
 local b2
 local btn
+local bar1Ant = 50
+local bar2Ant = 50
 
 local options = {
 	label = "",
@@ -25,6 +29,11 @@ local options = {
 	onRelease = onButtonTap
 }
 display.setDefault( "background", 255/255,255/255,255/255)
+
+local function zeraFill( event )
+	fillPlayer.width = 0
+	fillEnemy.width = 0
+end
 
 --======================================================================--
 --== Game Events
@@ -49,11 +58,20 @@ function onGameStart( event )
 	player.anchorX = 0
 	player.anchorY = 0
 	 
-	 
 	enemy = display.newRect( display.contentWidth, 0, 0, display.contentHeight )
 	enemy:setFillColor( 227/255,79/225,145/255 )
 	enemy.anchorX = 1
 	enemy.anchorY = 0
+
+	fillPlayer = display.newRect( 0, 0, 0, display.contentHeight )
+	fillPlayer:setFillColor( 0,1,0 )
+	fillPlayer.anchorX = 0
+	fillPlayer.anchorY = 0
+	 
+	fillEnemy = display.newRect( display.contentWidth, 0, 0, display.contentHeight )
+	fillEnemy:setFillColor( 1,0,0 )
+	fillEnemy.anchorX = 1
+	fillEnemy.anchorY = 0
 
 
 	function sendHit( event )
@@ -88,10 +106,22 @@ local function onClientData( event )
 	if data.setbar then
 		transition.to( player, {width = display.contentWidth / 100 * data.setbar.bar1, time = 100} )
 		transition.to( enemy,  {width = display.contentWidth / 100 * data.setbar.bar2, time = 100} )
+		if data.setbar.bar1 > bar1Ant then
+			transition.to( fillPlayer, {width = display.contentWidth / 100 * data.setbar.bar1, time = 100, onComplete=zeraFill} )	
+			bar1Ant = data.setbar.bar1
+			bar2Ant = data.setbar.bar2
+		end
+		if data.setbar.bar2 > bar2Ant then
+			transition.to( fillEnemy,  {width = display.contentWidth / 100 * data.setbar.bar2, time = 100, onComplete=zeraFill} )	
+			bar1Ant = data.setbar.bar1
+			bar2Ant = data.setbar.bar2
+		end
 	end
 	if data.setbar.win then
 		if data.setbar.win > 0 then
 			function restart( event )
+				bar1Ant = 50
+				bar2Ant = 50
 				gs:send( { ready = 1 } )
 				btn:removeEventListener( "tap", restart )
 				display.remove( btn )
