@@ -5,7 +5,7 @@ local Emitter = require( 'core' ).Emitter
 --======================================================================--
 local function calculateHit(client,hit)
 	local game = gs:getPlayerGame (client)
-	local win = 0
+	
 
 	local player_num = client:getPlayerNum()
 	p(player_num)
@@ -21,13 +21,17 @@ local function calculateHit(client,hit)
 		game.bar2 = game.bar2 + hit
 	end
 
-	if game.bar1 == 100 then
+	if game.bar1 == 100 and game.done == false then
 		game:publishGameDone({winner = 1})
-	elseif game.bar2 == 100 then
+		game.done = true
+	elseif game.bar2 == 100 and game.done == false then
 		game:publishGameDone({winner = 2})
+		game.done = true
 	end
-	player1:send( { setbar = { bar1 = game.bar1, bar2= game.bar2 } } )
-	player2:send( { setbar = { bar1 = game.bar2, bar2= game.bar1 } } )
+	if game.done == false then
+		player1:send( { setbar = { bar1 = game.bar1, bar2= game.bar2 } } )
+		player2:send( { setbar = { bar1 = game.bar2, bar2= game.bar1 } } )
+	end
 
 end
 --------------------------------------------------------------------------------
@@ -45,6 +49,7 @@ function Barras:criar( game )
 	game.bar2 = 50
 	game.ready1 = 0
 	game.ready2 = 0
+	game.done = false
 end
 
 function Barras:comecar( game )
@@ -70,6 +75,7 @@ function Barras:restart( client )
 		game:broadcast({ setbar = { bar1 = game.bar1, bar2 = game.bar2, restart = 1 } })
 		game.ready1 = 0
 		game.ready2 = 0
+		game.done = false
 	end
 end
 

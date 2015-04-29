@@ -101,8 +101,7 @@ function onGameDone(event)
 			bar1Ant = 50
 			bar2Ant = 50
 			gs:send( { ready = 1 } )
-			--btn:removeEventListener( "tap", restart )
-			display.remove( btn )
+			display.remove( grupo )
 		end
 		options.id = 'restart'
 		if gs:getPlayerNum() == event.data.msg.winner then
@@ -111,9 +110,11 @@ function onGameDone(event)
 			options.label = "You Lose!"
 		end
 		options.x = display.contentCenterX
-		options.y = display.contentCenterY
+		options.y = display.contentCenterY/2
 		btn = widget.newButton( options )
-		--Runtime:removeEventListener( "touch", sendHit )
+		grupo = display.newGroup()
+		grupo:insert( btn )
+		Runtime:removeEventListener( "touch", sendHit )
 		btn:addEventListener( "tap", restart )
 	end
 end
