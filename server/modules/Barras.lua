@@ -1,22 +1,9 @@
 local Emitter = require( 'core' ).Emitter
 
-local Barras = Emitter:extend()
-function Barras:initialize( )
-
-end
-
-function Barras:criar( game )
-	game.bar1 = 50
-	game.bar2 = 50
-	game.ready1 = 0
-	game.ready2 = 0
-end
-
-function Barras:comecar( game )
-	game:broadcast({ setbar = { bar1 = game.bar1, bar2 = game.bar2 } })
-end
-
-function Barras:setBar( client,hit )
+--======================================================================--
+--== Game Local Functions
+--======================================================================--
+local function calculateHit(client,hit)
 	local game = gs:getPlayerGame (client)
 	local win = 0
 
@@ -35,18 +22,37 @@ function Barras:setBar( client,hit )
 	end
 
 	if game.bar1 == 100 then
-		--game:publishGameDone("bye")
-		--game:close( )
-		win = 1
+		game:publishGameDone({winner = 1})
 	elseif game.bar2 == 100 then
-		--game:publishGameDone("bye")
-		--game:close( )
-		win = 2
+		game:publishGameDone({winner = 2})
 	end
-	p("Winner:",win)
-	player1:send( { setbar = { bar1 = game.bar1, bar2= game.bar2, win=win } } )
-	player2:send( { setbar = { bar1 = game.bar2, bar2= game.bar1, win=win } } )
-			
+	player1:send( { setbar = { bar1 = game.bar1, bar2= game.bar2 } } )
+	player2:send( { setbar = { bar1 = game.bar2, bar2= game.bar1 } } )
+
+end
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+
+local Barras = Emitter:extend()
+function Barras:initialize( )
+
+end
+
+function Barras:criar( game )
+	game.bar1 = 50
+	game.bar2 = 50
+	game.ready1 = 0
+	game.ready2 = 0
+end
+
+function Barras:comecar( game )
+	game:broadcast({ setbar = { bar1 = game.bar1, bar2 = game.bar2 } })
+end
+
+function Barras:setBar( client,hit )
+	calculateHit(client,hit)	
 end
 
 function Barras:restart( client )

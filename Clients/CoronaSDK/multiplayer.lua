@@ -48,6 +48,7 @@ end
 
 function onGameJoin( event )
 	p( event.data )
+
 end
 
 function onGameStart( event )
@@ -92,8 +93,29 @@ function onGameLeave( event )
 end
 
 function onGameDone(event)
-	p(event.data)
-	p( 'Game Done' )
+	p("Winner")
+	p(event.data.msg.winner)
+	p(gs:getPlayerNum())
+	if event.data.msg.winner then
+		function restart( event )
+			bar1Ant = 50
+			bar2Ant = 50
+			gs:send( { ready = 1 } )
+			--btn:removeEventListener( "tap", restart )
+			display.remove( btn )
+		end
+		options.id = 'restart'
+		if gs:getPlayerNum() == event.data.msg.winner then
+			options.label = "You Win!"
+		else
+			options.label = "You Lose!"
+		end
+		options.x = display.contentCenterX
+		options.y = display.contentCenterY
+		btn = widget.newButton( options )
+		--Runtime:removeEventListener( "touch", sendHit )
+		btn:addEventListener( "tap", restart )
+	end
 end
 
 --======================================================================--
@@ -102,6 +124,8 @@ end
 local function onClientData( event )
 	p( event.data )
 	local data = event.data
+	p("--cliente data--")
+	p(gs:getPlayerNum())
 
 	if data.setbar then
 		transition.to( player, {width = display.contentWidth / 100 * data.setbar.bar1, time = 100} )
@@ -117,28 +141,7 @@ local function onClientData( event )
 			bar2Ant = data.setbar.bar2
 		end
 	end
-	if data.setbar.win then
-		if data.setbar.win > 0 then
-			function restart( event )
-				bar1Ant = 50
-				bar2Ant = 50
-				gs:send( { ready = 1 } )
-				btn:removeEventListener( "tap", restart )
-				display.remove( btn )
-			end
-			options.id = 'restart'
-			if gs:getPlayerNum() == data.setbar.win then
-				options.label = "You Win!"
-			else
-				options.label = "You Lose!"
-			end
-			options.x = display.contentCenterX
-			options.y = display.contentCenterY
-			btn = widget.newButton( options )
-			Runtime:removeEventListener( "touch", sendHit )
-			btn:addEventListener( "tap", restart )
-		end
-	end
+
 	if data.setbar.restart then
 		p("reiniciar")
 		Runtime:addEventListener( "touch", sendHit )	
